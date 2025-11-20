@@ -1,86 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>PS5 Rental Dashboard</title>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>PS5 Rental Dashboard Login</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
-    .green { background: #c8f7c5; }
-    .orange { background: #ffe6b5; }
-    .red { background: #ffcccc; }
-    button { padding: 5px 10px; margin: 2px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box, .dashboard {
+      background: #1b1b1b;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #000;
+    }
+    input {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    .btn {
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .btn:hover { background: #45a049; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
 
-<h2>PS5 Rental Dashboard</h2>
-<p>This will load your Google Sheet data and show your PS5 stations.</p>
+<!-- LOGIN BOX -->
+<div class="login-box" id="loginBox">
+  <h2>PS5 Rental Login</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button class="btn" onclick="login()">Login</button>
+</div>
 
-<table id="sessionTable">
-  <thead>
-    <tr>
-      <th>Station</th>
-      <th>Customer</th>
-      <th>Start</th>
-      <th>Time Remaining</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<!-- DASHBOARD -->
+<div class="dashboard hidden" id="dashboard">
+  <h1>Welcome to PS5 Rental Dashboard</h1>
+  <p>You are now logged in.</p>
+  <button class="btn" onclick="logout()">Logout</button>
+</div>
 
 <script>
-const API = "1MRk7U4pJNQoBsMO2KI0fRGUB19GNz4bpM6lohGKO5k0";
+// Hardcoded login credentials
+const USERNAME = "admin";
+const PASSWORD = "1234";
 
-// Load sessions
-async function loadSessions() {
-  try {
-    let res = await fetch(API);
-    let data = await res.json();
-    let tbody = document.querySelector("#sessionTable tbody");
-    tbody.innerHTML = "";
+function login() {
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
 
-    data.forEach(s => {
-      let row = document.createElement("tr");
-      let color = "";
-
-      if (s.status == "Ongoing") color = "green";
-      if (s.status == "Near End") color = "orange";
-      if (s.status == "Ended") color = "red";
-
-      row.innerHTML = `
-        <td>${s.station}</td>
-        <td>${s.customer}</td>
-        <td>${s.startTime}</td>
-        <td>${s.timeRemaining}</td>
-        <td class="${color}">${s.status}</td>
-        <td>
-          <button onclick="action('${s.station}', 'pause')">Pause</button>
-          <button onclick="action('${s.station}', 'resume')">Resume</button>
-          <button onclick="action('${s.station}', 'stop')">Stop</button>
-        </td>
-      `;
-
-      tbody.appendChild(row);
-    });
-  } catch (err) {
-    console.error("Error loading data:", err);
+  if(user === USERNAME && pass === PASSWORD) {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+  } else {
+    alert("Incorrect username or password!");
   }
 }
 
-async function action(station, action) {
-  await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({ station, action })
-  });
-  loadSessions();
+function logout() {
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
 }
-
-setInterval(loadSessions, 5000); // auto-refresh every 5 seconds
-loadSessions();
 </script>
 
 </body>
