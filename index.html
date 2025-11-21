@@ -1,51 +1,59 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PS5 Rental Dashboard</title>
+<title>SKRU Gaming Lounge Dashboard</title>
+
 <style>
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f0f2f5;
     margin: 0;
     padding: 0;
   }
 
-  #loginDiv {
-    width: 300px;
-    margin: 100px auto;
-    background: #fff;
+  /* Container Panels */
+  .card {
+    width: 350px;
+    margin: 80px auto;
+    background: white;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     text-align: center;
   }
 
-  #loginDiv h3 {
-    margin-bottom: 20px;
+  h3 {
+    margin-bottom: 15px;
   }
 
-  #loginDiv input {
+  input {
     width: 90%;
-    padding: 10px;
+    padding: 12px;
     margin: 8px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    border-radius: 6px;
+    border: 1px solid #bbb;
   }
 
-  #loginDiv button {
-    padding: 10px 20px;
+  button {
+    padding: 12px 20px;
     margin-top: 10px;
     border: none;
     background-color: #4CAF50;
-    color: #fff;
-    border-radius: 5px;
+    color: white;
+    border-radius: 6px;
     cursor: pointer;
   }
 
-  #loginDiv button:hover {
-    background-color: #45a049;
+  button:hover {
+    background-color: #43a047;
+  }
+
+  .link-btn {
+    color: #007bff;
+    cursor: pointer;
+    display: block;
+    margin-top: 10px;
   }
 
   #dashboard {
@@ -56,14 +64,13 @@
   h2 {
     text-align: center;
     margin-bottom: 20px;
-    color: #333;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
   th, td {
@@ -77,50 +84,55 @@
     color: white;
   }
 
-  tr.status-ongoing td {
-    background-color: #d4edda;
-  }
-
-  tr.status-paused td {
-    background-color: #fff3cd;
-  }
-
-  tr.status-ended td {
-    background-color: #f8d7da;
-  }
+  tr.status-ongoing td { background-color: #d4edda; }
+  tr.status-paused td { background-color: #fff3cd; }
+  tr.status-ended td { background-color: #f8d7da; }
 
   button.action-btn {
     padding: 5px 8px;
     margin: 2px;
-    border: none;
     border-radius: 4px;
+    border: none;
     cursor: pointer;
   }
 
-  button.pause-btn { background-color: #ffc107; color: #333; }
-  button.resume-btn { background-color: #28a745; color: #fff; }
-  button.stop-btn { background-color: #dc3545; color: #fff; }
+  .pause-btn { background: #ffc107; }
+  .resume-btn { background: #28a745; color: white; }
+  .stop-btn { background: #dc3545; color: white; }
 
-  @media screen and (max-width: 800px) {
-    table, thead, tbody, th, td, tr { display: block; }
-    th { position: sticky; top: 0; }
-    td { text-align: right; padding-left: 50%; position: relative; }
-    td::before { content: attr(data-label); position: absolute; left: 10px; font-weight: bold; }
-  }
 </style>
 </head>
 <body>
 
-<div id="loginDiv">
+<!-- LOGIN SCREEN -->
+<div id="loginDiv" class="card">
   <h3>SKRU Gaming Lounge Login</h3>
-  <input type="text" id="username" placeholder="Username"><br>
-  <input type="password" id="password" placeholder="Password"><br>
+  <input type="text" id="loginUser" placeholder="Operator Name"><br>
+  <input type="password" id="loginPhone" placeholder="Phone Number"><br>
   <button onclick="login()">Login</button>
   <p id="loginMsg" style="color:red;"></p>
+
+  <span class="link-btn" onclick="showRegister()">Register as a Controller</span>
 </div>
 
+<!-- REGISTER SCREEN -->
+<div id="registerDiv" class="card" style="display:none;">
+  <h3>Register as Controller</h3>
+  <input type="text" id="regName" placeholder="Full Name"><br>
+  <input type="text" id="regPhone" placeholder="Phone Number"><br>
+  <input type="email" id="regEmail" placeholder="Email"><br>
+  <input type="password" id="regPass" placeholder="Password"><br>
+
+  <button onclick="register()">Submit Registration</button>
+  <p id="registerMsg" style="color:red;"></p>
+
+  <span class="link-btn" onclick="showLogin()">Back to Login</span>
+</div>
+
+<!-- DASHBOARD -->
 <div id="dashboard">
   <h2>SKRU Gaming Lounge Dashboard</h2>
+
   <table id="sessionTable">
     <thead>
       <tr>
@@ -138,83 +150,154 @@
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- Rows generated dynamically -->
-    </tbody>
+    <tbody></tbody>
   </table>
 </div>
 
 <script>
-const API = "YOUR_WEB_APP_URL_HERE"; // replace with your PSWebApp URL
+/* -------------------------------------------
+   CONFIG
+-------------------------------------------- */
+const API = "YOUR_WEB_APP_URL_HERE"; // <----- REPLACE THIS
 
-function login() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if(user === "admin" && pass === "1234") {
-    document.getElementById("loginDiv").style.display = "none";
-    document.getElementById("dashboard").style.display = "block";
-    loadSessions();
-    setInterval(loadSessions, 10000); // refresh every 10s
-  } else {
-    document.getElementById("loginMsg").innerText = "Invalid credentials!";
+/* -------------------------------------------
+   SCREEN SWITCHING
+-------------------------------------------- */
+function showRegister() {
+  document.getElementById("loginDiv").style.display = "none";
+  document.getElementById("registerDiv").style.display = "block";
+}
+
+function showLogin() {
+  document.getElementById("registerDiv").style.display = "none";
+  document.getElementById("loginDiv").style.display = "block";
+}
+
+/* -------------------------------------------
+   LOGIN FUNCTION
+-------------------------------------------- */
+async function login() {
+  const username = document.getElementById("loginUser").value;
+  const phone = document.getElementById("loginPhone").value;
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({ type: "login", username: username, phone: phone }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const result = await res.json();
+
+    if(result.success) {
+      document.getElementById("loginDiv").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      loadSessions();
+      setInterval(loadSessions, 10000);
+    } else {
+      document.getElementById("loginMsg").innerText = "Invalid login details!";
+    }
+
+  } catch (err) {
+    document.getElementById("loginMsg").innerText = "Connection error!";
   }
 }
 
+/* -------------------------------------------
+   REGISTER FUNCTION
+-------------------------------------------- */
+async function register() {
+  const name = document.getElementById("regName").value;
+  const phone = document.getElementById("regPhone").value;
+  const email = document.getElementById("regEmail").value;
+  const pass = document.getElementById("regPass").value;
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "register",
+        name: name,
+        phone: phone,
+        email: email,
+        password: pass
+      }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const result = await res.json();
+
+    if(result.success) {
+      document.getElementById("registerMsg").style.color = "green";
+      document.getElementById("registerMsg").innerText = "Registration successful!";
+      setTimeout(showLogin, 1500);
+    } else {
+      document.getElementById("registerMsg").innerText = "Registration failed!";
+    }
+
+  } catch (err) {
+    document.getElementById("registerMsg").innerText = "Connection error!";
+  }
+}
+
+/* -------------------------------------------
+   LOAD SESSIONS
+-------------------------------------------- */
 async function loadSessions() {
   try {
     const response = await fetch(API);
     const sessions = await response.json();
     const table = document.querySelector("#sessionTable tbody");
+
     table.innerHTML = "";
 
     sessions.forEach(session => {
-      let statusClass = "";
-      if(session.status === "Ongoing") statusClass = "status-ongoing";
-      else if(session.status === "Paused") statusClass = "status-paused";
-      else if(session.status === "Ended") statusClass = "status-ended";
+      let statusClass =
+        session.status === "Ongoing" ? "status-ongoing" :
+        session.status === "Paused" ? "status-paused" :
+        "status-ended";
 
       const row = document.createElement("tr");
       row.className = statusClass;
 
       row.innerHTML = `
-        <td data-label="Date">${session.date || ""}</td>
-        <td data-label="Start Time">${session.startTime || ""}</td>
-        <td data-label="Hours">${session.hours || ""}</td>
-        <td data-label="End Time">${session.endTime || ""}</td>
-        <td data-label="Customer">${session.customer || ""}</td>
-        <td data-label="Station">${session.station || ""}</td>
-        <td data-label="Amount">${session.amount || ""}</td>
-        <td data-label="Payment">${session.payment || ""}</td>
-        <td data-label="Time Remaining">${session.timeRemaining || ""}</td>
-        <td data-label="Added Time">${session.addedTime || ""}</td>
-        <td data-label="Status">${session.status || ""}</td>
-        <td data-label="Actions">
+        <td>${session.date || ""}</td>
+        <td>${session.startTime || ""}</td>
+        <td>${session.hours || ""}</td>
+        <td>${session.endTime || ""}</td>
+        <td>${session.customer || ""}</td>
+        <td>${session.station || ""}</td>
+        <td>${session.amount || ""}</td>
+        <td>${session.payment || ""}</td>
+        <td>${session.timeRemaining || ""}</td>
+        <td>${session.addedTime || ""}</td>
+        <td>${session.status || ""}</td>
+        <td>
           <button class="action-btn pause-btn" onclick="updateStatus('${session.station}','pause')">Pause</button>
           <button class="action-btn resume-btn" onclick="updateStatus('${session.station}','resume')">Resume</button>
           <button class="action-btn stop-btn" onclick="updateStatus('${session.station}','stop')">Stop</button>
-        </td>
-      `;
+        </td>`;
       table.appendChild(row);
     });
-  } catch(err) {
-    console.error("Error fetching sessions:", err);
+
+  } catch (err) {
+    console.log("Error loading sessions", err);
   }
 }
 
+/* -------------------------------------------
+   UPDATE SESSION STATUS
+-------------------------------------------- */
 async function updateStatus(station, action) {
-  try {
-    await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({ station: station, action: action }),
-      headers: { "Content-Type": "application/json" }
-    });
-    loadSessions();
-  } catch(err) {
-    console.error("Error updating status:", err);
-  }
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ station: station, action: action }),
+    headers: { "Content-Type": "application/json" }
+  });
+  loadSessions();
 }
+
 </script>
 
 </body>
 </html>
-
