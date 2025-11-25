@@ -2,138 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PS5 Rental Login</title>
+<title>SKRU Gaming Lounge Login</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #111;
-        color: white;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    #container {
-        width: 350px;
-        padding: 20px;
-        background: #222;
-        border-radius: 10px;
-        box-shadow: 0 0 10px #000;
-        text-align: center;
-    }
-
-    input {
-        width: 90%;
-        padding: 12px;
-        margin: 10px 0;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-    }
-
-    button {
-        width: 90%;
-        padding: 12px;
-        background: #4CAF50;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        color: white;
-        cursor: pointer;
-    }
-
-    #dashboard {
-        display: none;
-    }
-
-    #logoutBtn {
-        background: #c0392b;
-        margin-top: 20px;
-    }
+  body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin:0; padding:0; }
+  .card { width: 350px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; }
+  input { width: 90%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #bbb; }
+  button { padding: 12px 20px; margin-top: 10px; border: none; background-color: #4CAF50; color: white; border-radius: 6px; cursor: pointer; }
+  button:hover { background-color: #43a047; }
+  #loginMsg { color: red; }
 </style>
 </head>
 <body>
 
-<div id="container">
-
-    <!-- LOGIN SCREEN -->
-    <div id="loginScreen">
-        <h2>SKRU Login</h2>
-        <input type="text" id="loginUser" placeholder="Username">
-        <input type="password" id="loginPass" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <p id="loginMsg" style="color: red;"></p>
-    </div>
-
-    <!-- DASHBOARD SCREEN -->
-    <div id="dashboard">
-        <h2>Welcome, <span id="opName"></span></h2>
-        <p>You are now logged in.</p>
-
-        <button id="logoutBtn" onclick="logout()">Logout</button>
-    </div>
-
+<div id="loginDiv" class="card">
+  <h3>SKRU Gaming Lounge Login</h3>
+  <input type="text" id="loginUser" placeholder="Username"><br>
+  <input type="password" id="loginPass" placeholder="Password"><br>
+  <button onclick="login()">Login</button>
+  <p id="loginMsg"></p>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwlDlco5VV2H7vfEbugKWkhTnhXUqHyaeeEOVwyBMQAP7k23nqtx-YZoe-ZjVRieVl1DQ/exec"; // Replace with deployed Apps Script URL
+const API = "https://script.google.com/macros/s/AKfycbwlDlco5VV2H7vfEbugKWkhTnhXUqHyaeeEOVwyBMQAP7k23nqtx-YZoe-ZjVRieVl1DQ/exec";
 
-// Auto-login if already logged in
-window.onload = function() {
-    let user = localStorage.getItem("operator");
-    if (user) {
-        showDashboard(JSON.parse(user).name);
-    }
-};
-
-// LOGIN FUNCTION
 async function login() {
-    const username = document.getElementById("loginUser").value;
-    const password = document.getElementById("loginPass").value;
-    const msg = document.getElementById("loginMsg");
+  const username = document.getElementById("loginUser").value;
+  const password = document.getElementById("loginPass").value;
+  const msg = document.getElementById("loginMsg");
 
-    msg.innerHTML = "Checking...";
+  if (!username || !password) {
+    msg.innerText = "Please enter username and password.";
+    return;
+  }
 
+  msg.innerText = "Checking...";
+
+  try {
     const res = await fetch(API, {
-        method: "POST",
-        body: JSON.stringify({
-            type: "login",
-            username: username,
-            password: password
-        }),
-        headers: { "Content-Type": "application/json" }
+      method: "POST",
+      body: JSON.stringify({ type: "login", username, password }),
+      headers: { "Content-Type": "application/json" }
     });
+
+    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
     const result = await res.json();
 
     if (result.success) {
-        msg.innerHTML = "";
-
-        // SAVE SESSION
-        localStorage.setItem("operator", JSON.stringify({
-            name: username
-        }));
-
-        showDashboard(username);
+      msg.style.color = "green";
+      msg.innerText = "Login successful!";
+      // Redirect or show dashboard here
     } else {
-        msg.innerHTML = "Invalid username or password!";
+      msg.style.color = "red";
+      msg.innerText = "Invalid username or password!";
     }
-}
 
-// SHOW DASHBOARD
-function showDashboard(name) {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("dashboard").style.display = "block";
-    document.getElementById("opName").innerText = name;
-}
-
-// LOGOUT
-function logout() {
-    localStorage.removeItem("operator");
-    location.reload();
+  } catch (err) {
+    msg.style.color = "red";
+    msg.innerText = `Connection error: ${err.message}`;
+    console.error("Fetch error:", err);
+  }
 }
 </script>
 
