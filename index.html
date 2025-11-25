@@ -2,14 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SKRU Gaming Lounge Login</title>
+<title>SKRU Gaming Lounge Dashboard</title>
 <style>
-  body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin:0; padding:0; }
-  .card { width: 350px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; }
-  input { width: 90%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #bbb; }
-  button { padding: 12px 20px; margin-top: 10px; border: none; background-color: #4CAF50; color: white; border-radius: 6px; cursor: pointer; }
-  button:hover { background-color: #43a047; }
-  #loginMsg { color: red; }
+body { font-family:'Segoe UI', sans-serif; background:#f0f2f5; margin:0; padding:0; }
+.card { width:350px; margin:80px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.15); text-align:center; }
+input { width:90%; padding:12px; margin:8px 0; border-radius:6px; border:1px solid #bbb; }
+button { padding:12px 20px; margin-top:10px; border:none; background-color:#4CAF50; color:white; border-radius:6px; cursor:pointer; }
+button:hover { background-color:#43a047; }
+#loginMsg { color:red; }
+#dashboard { display:none; padding:20px; }
+table { width:100%; border-collapse:collapse; }
+th,td { padding:10px; text-align:center; border-bottom:1px solid #ddd; }
+th { background-color:#4CAF50; color:white; }
+tr.status-ongoing td { background-color:#d4edda; }
+tr.status-paused td { background-color:#fff3cd; }
+tr.status-ended td { background-color:#f8d7da; }
+button.action-btn { padding:5px 8px; margin:2px; border-radius:4px; border:none; cursor:pointer; }
+.pause-btn { background:#ffc107; }
+.resume-btn { background:#28a745; color:white; }
+.stop-btn { background:#dc3545; color:white; }
 </style>
 </head>
 <body>
@@ -22,46 +33,82 @@
   <p id="loginMsg"></p>
 </div>
 
+<div id="dashboard">
+  <h2>Dashboard</h2>
+  <table id="sessionTable">
+    <thead>
+      <tr>
+        <th>Date</th><th>Start</th><th>Hours</th><th>End</th><th>Customer</th>
+        <th>Station</th><th>Amount</th><th>Payment</th><th>Time Remain</th>
+        <th>Added Time</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwlDlco5VV2H7vfEbugKWkhTnhXUqHyaeeEOVwyBMQAP7k23nqtx-YZoe-ZjVRieVl1DQ/exec";
-
 async function login() {
-  const username = document.getElementById("loginUser").value;
-  const password = document.getElementById("loginPass").value;
-  const msg = document.getElementById("loginMsg");
+  const username = document.getElementById('loginUser').value;
+  const password = document.getElementById('loginPass').value;
+  const msg = document.getElementById('loginMsg');
+  if (!username || !password) { msg.innerText='Enter username & password'; return; }
 
-  if (!username || !password) {
-    msg.innerText = "Please enter username and password.";
-    return;
-  }
-
-  msg.innerText = "Checking...";
-
+  msg.innerText='Checking...';
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({ type: "login", username, password }),
-      headers: { "Content-Type": "application/json" }
+    const res = await fetch('', {  // Empty string '' calls same Apps Script Web App
+      method:'POST',
+      body: JSON.stringify({type:'login', username, password}),
+      headers:{'Content-Type':'application/json'}
     });
-
-    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-
-    const result = await res.json();
-
-    if (result.success) {
-      msg.style.color = "green";
-      msg.innerText = "Login successful!";
-      // Redirect or show dashboard here
-    } else {
-      msg.style.color = "red";
-      msg.innerText = "Invalid username or password!";
-    }
-
-  } catch (err) {
-    msg.style.color = "red";
-    msg.innerText = `Connection error: ${err.message}`;
-    console.error("Fetch error:", err);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if(data.success){
+      msg.style.color='green'; msg.innerText='Login successful!';
+      document.getElementById('loginDiv').style.display='none';
+      document.getElementById('dashboard').style.display='block';
+      loadSessions();
+      setInterval(loadSessions, 10000);
+    } else { msg.style.color='red'; msg.innerText='Invalid username or password'; }
+  } catch(err){
+    msg.style.color='red'; msg.innerText=`Connection error: ${err.message}`;
+    console.error(err);
   }
+}
+
+async function loadSessions(){
+  try{
+    const res = await google.script.run.withSuccessHandler(renderSessions).getSessions();
+  }catch(err){ console.error(err); }
+}
+
+function renderSessions(sessions){
+  const tbody = document.querySelector('#sessionTable tbody');
+  tbody.innerHTML='';
+  sessions.forEach(s=>{
+    let cls = s.status==='Ongoing'?'status-ongoing': s.status==='Paused'?'status-paused':'status-ended';
+    const tr = document.createElement('tr'); tr.className=cls;
+    tr.innerHTML=`
+      <td>${s.date||''}</td><td>${s.startTime||''}</td><td>${s.hours||''}</td>
+      <td>${s.endTime||''}</td><td>${s.customer||''}</td><td>${s.station||''}</td>
+      <td>${s.amount||''}</td><td>${s.payment||''}</td><td>${s.timeRemaining||''}</td>
+      <td>${s.addedTime||''}</td><td>${s.status||''}</td>
+      <td>
+        <button class="action-btn pause-btn" onclick="updateStatus('${s.station}','pause')">Pause</button>
+        <button class="action-btn resume-btn" onclick="updateStatus('${s.station}','resume')">Resume</button>
+        <button class="action-btn stop-btn" onclick="updateStatus('${s.station}','stop')">Stop</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateStatus(station, action){
+  google.script.run.withSuccessHandler(loadSessions).doPostJSON({station, action});
+}
+
+// Helper to call doPost from frontend safely
+function doPostJSON(obj){
+  return google.script.run.withSuccessHandler(()=>{}).withFailureHandler(err=>console.error(err)).doPost(obj);
 }
 </script>
 
